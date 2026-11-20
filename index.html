@@ -1,0 +1,240 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+<title>GameMarket – Vente et échange de comptes de jeux</title>
+
+<meta name="description" content="Achetez, vendez ou échangez des comptes Free Fire, eFootball et Blood Strike. Annonces validées avec vraies captures d’écran.">
+
+<link rel="canonical" href="https://yannxflex-netizen.github.io/GameMarket-/">
+
+<meta name="robots" content="index,follow,max-image-preview:large">
+<meta name="theme-color" content="#ff7900">
+
+<!-- OPEN GRAPH : APERÇU WHATSAPP -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="GameMarket">
+<meta property="og:locale" content="fr_FR">
+
+<meta property="og:title" content="GameMarket – Vente et échange de comptes de jeux">
+
+<meta property="og:description" content="Free Fire, eFootball, Blood Strike : achetez, vendez et échangez vos comptes de jeux sur GameMarket.">
+
+<meta property="og:url" content="https://yannxflex-netizen.github.io/GameMarket-/">
+
+<meta property="og:image" content="https://yannxflex-netizen.github.io/GameMarket-/gamemarket-gm.png">
+
+<meta property="og:image:secure_url" content="https://yannxflex-netizen.github.io/GameMarket-/gamemarket-gm.png">
+
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Logo GameMarket GM">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="GameMarket – Vente et échange de comptes">
+<meta name="twitter:description" content="Free Fire, eFootball et Blood Strike.">
+<meta name="twitter:image" content="https://yannxflex-netizen.github.io/GameMarket-/gamemarket-gm.png">
+
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="animations.css">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "GameMarket",
+  "url": "https://yannxflex-netizen.github.io/GameMarket-/",
+  "inLanguage": "fr"
+}
+</script>
+</head>
+
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<symbol id="i-wa" viewBox="0 0 24 24">
+<path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884"/>
+</symbol>
+<symbol id="i-grp" viewBox="0 0 24 24">
+<path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.98.05 1.16.84 1.98 1.97 1.98 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+</symbol>
+</svg>
+
+<header>
+  <div class="bar">
+    <div class="logo">Game<b>Market</b></div>
+    <div class="acts">
+      <a class="btn ghost" id="authLink" href="login.html">Connexion</a>
+      <button class="btn" id="openPost">Publier<span class="lg"> un compte</span></button>
+    </div>
+  </div>
+
+  <div class="hero">
+    <h1>Achetez, vendez ou échangez des comptes de jeux</h1>
+    <p>Des annonces avec vraies captures d’écran, notées par les acheteurs. Contactez directement l’administrateur sur WhatsApp.</p>
+  </div>
+</header>
+
+<main>
+
+  <div class="notice">
+    <div class="vn">
+      <button class="vn-btn" id="vnBtn" type="button" aria-pressed="false" aria-label="Écouter le message À savoir">
+        <svg class="vn-ico" viewBox="0 0 24 24" aria-hidden="true">
+          <path class="vn-play" d="M8 5v14l11-7z"/>
+          <path class="vn-pause" d="M7 5h4v14H7zm6 0h4v14h-4z"/>
+        </svg>
+      </button>
+      <div class="vn-body">
+        <strong class="vn-title">À savoir · message vocal</strong>
+        <div class="vn-wave" id="vnWave" aria-hidden="true"></div>
+      </div>
+      <span class="vn-time" id="vnTime">0:00</span>
+    </div>
+
+    <details class="vn-text">
+      <summary>Lire le texte</summary>
+      <p id="vnText"><strong>À savoir :</strong> La plupart des éditeurs (Garena, Konami, NetEase…) interdisent la vente de comptes. Vérifiez toujours les captures, ne payez jamais avant d’avoir validé le compte et privilégiez un paiement sécurisé.</p>
+    </details>
+  </div>
+
+  <div class="tools">
+    <input id="q" type="search" placeholder="Rechercher (rang, skin, niveau…)" aria-label="Rechercher">
+
+    <select id="game" aria-label="Jeu">
+      <option value="">Tous les jeux</option>
+      <option>Free Fire</option>
+      <option>eFootball</option>
+      <option>Blood Strike</option>
+    </select>
+
+    <select id="sort" aria-label="Tri">
+      <option value="new">Plus récents</option>
+      <option value="pa">Prix croissant</option>
+      <option value="pd">Prix décroissant</option>
+      <option value="note">Mieux notés</option>
+    </select>
+
+    <select id="lvl" aria-label="Niveau minimum">
+      <option value="0">Tout niveau</option>
+      <option value="40">Niveau 40+</option>
+      <option value="60">Niveau 60+</option>
+      <option value="70">Niveau 70+</option>
+    </select>
+  </div>
+
+  <div class="tabs" role="group" aria-label="Type d’annonce">
+    <button class="tab" data-t="" aria-pressed="true">Toutes</button>
+    <button class="tab" data-t="vente" aria-pressed="false">À vendre</button>
+    <button class="tab" data-t="echange" aria-pressed="false">À échanger</button>
+  </div>
+
+  <noscript>
+    <p class="empty">Activez JavaScript pour voir et publier des annonces.</p>
+  </noscript>
+
+  <div class="grid" id="list"></div>
+
+</main>
+
+<footer class="foot">
+  <div class="foot-in">
+
+    <div class="fcol">
+      <div class="logo">Game<b>Market</b></div>
+      <p>Achat, vente et échange de comptes Free Fire, eFootball et Blood Strike, avec des captures à vérifier et des avis d’acheteurs.</p>
+    </div>
+
+    <div class="fcol">
+      <h3>Les jeux</h3>
+      <button class="flink" data-pick="Free Fire">Free Fire</button>
+      <button class="flink" data-pick="eFootball">eFootball</button>
+      <button class="flink" data-pick="Blood Strike">Blood Strike</button>
+      <button class="flink" data-pick="">Toutes les annonces</button>
+    </div>
+
+    <div class="fcol">
+      <h3>Contact</h3>
+      <button class="btn ok" id="waOpen" type="button">
+        <svg class="wa" aria-hidden="true"><use href="#i-wa"/></svg>
+        Service client
+      </button>
+      <p class="fnote">Une question ? Besoin d’aide pour publier votre compte ? Écrivez-nous.</p>
+    </div>
+
+    <div class="fcol">
+      <h3>Acheter en sécurité</h3>
+      <ul>
+        <li>Vérifiez les captures, le niveau et la liaison du compte.</li>
+        <li>Ne payez jamais avant d’avoir testé le compte.</li>
+        <li>Changez tous les accès juste après l’achat.</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <div class="foot-bot">
+    <span>© <span id="yr"></span> GameMarket. Site indépendant, non affilié aux éditeurs (Garena, Konami, NetEase).</span>
+    <button class="flink" id="toTop" type="button">Retour en haut ↑</button>
+  </div>
+</footer>
+
+<dialog id="dPost">
+  <div class="dh">
+    <h2>Publier un compte</h2>
+    <button class="x" data-close aria-label="Fermer">×</button>
+  </div>
+  <div class="db"></div>
+</dialog>
+
+<dialog id="dView">
+  <div class="dh">
+    <h2 id="vTitle"></h2>
+    <button class="x" data-close aria-label="Fermer">×</button>
+  </div>
+  <div class="db" id="vBody"></div>
+</dialog>
+
+<dialog id="dWa">
+  <div class="dh">
+    <h2>Service client</h2>
+    <button class="x" data-close aria-label="Fermer">×</button>
+  </div>
+
+  <div class="db">
+    <p class="sm">Comment voulez-vous nous joindre ?</p>
+
+    <a class="opt" id="waWrite" target="_blank" rel="noopener">
+      <span class="ico">
+        <svg class="wa" aria-hidden="true"><use href="#i-wa"/></svg>
+      </span>
+      <span>
+        <strong>Écrire au service client</strong>
+        <small>Une question ou besoin d’aide pour publier votre compte : on vous répond sur WhatsApp.</small>
+      </span>
+    </a>
+
+    <a class="opt" id="waGroup" target="_blank" rel="noopener">
+      <span class="ico alt">
+        <svg class="wa" aria-hidden="true"><use href="#i-grp"/></svg>
+      </span>
+      <span>
+        <strong>Rejoindre le groupe WhatsApp</strong>
+        <small>Suivez les nouvelles annonces et échangez avec la communauté.</small>
+      </span>
+    </a>
+  </div>
+</dialog>
+
+<script type="module" src="firebase.js"></script>
+<script src="script.js"></script>
+<script src="voice.js"></script>
+<script src="animations.js"></script>
+
+</body>
+</html>
