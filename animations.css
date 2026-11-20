@@ -1,0 +1,85 @@
+/* GameMarket : animations (se charge après style.css) */
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes rise{from{opacity:0;transform:translateY(20px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes up{to{transform:none}}
+@keyframes drift{from{transform:scale(1.03)}to{transform:scale(1.14) translate3d(-1.5%,-2%,0)}}
+@keyframes pop{from{opacity:0;transform:translateY(26px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes toast{from{opacity:0;transform:translate(-50%,18px)}to{opacity:1;transform:translate(-50%,0)}}
+@keyframes star{0%{transform:scale(.6)}60%{transform:scale(1.35)}100%{transform:scale(1)}}
+@keyframes rpl{to{transform:scale(1);opacity:0}}
+@keyframes vnPulse{0%{box-shadow:0 0 0 0 rgba(232,89,12,.45)}100%{box-shadow:0 0 0 14px rgba(232,89,12,0)}}
+@keyframes vt-out{to{opacity:0}}
+@keyframes vt-in{from{opacity:0;transform:translateY(8px)}}
+
+/* Transitions entre les pages (annonces <-> connexion) */
+@view-transition{navigation:auto}
+::view-transition-old(root){animation:.2s ease both vt-out}
+::view-transition-new(root){animation:.35s ease both vt-in}
+@supports not (view-transition-name:none){body{animation:fade .4s ease backwards}}
+
+/* Haut de page : la photo respire lentement, le titre apparaît mot par mot */
+header{overflow:hidden}
+.hbg div{animation:drift 26s ease-in-out infinite alternate;will-change:transform}
+.bar{animation:fade .7s ease backwards}
+.hero p{animation:rise .8s cubic-bezier(.2,.8,.2,1) .6s backwards}
+.w{display:inline-block;overflow:hidden;vertical-align:top;padding-bottom:.14em;margin-bottom:-.14em}
+.w>span{display:inline-block;transform:translateY(115%);animation:up .75s cubic-bezier(.2,.8,.2,1) forwards;animation-delay:calc(.15s + var(--i,0)*.07s)}
+
+/* Blocs (alerte, filtres, onglets, pied de page) : apparition douce au défilement */
+.js-anim .rv{opacity:0;transform:translateY(18px);transition:opacity .7s ease var(--d,0s),transform .7s cubic-bezier(.2,.8,.2,1) var(--d,0s)}
+.js-anim .rv.in{opacity:1;transform:none}
+
+/* Annonces : apparition en cascade au défilement */
+.js-anim .card:not(.in){opacity:0}
+.card.in{animation:rise .6s cubic-bezier(.2,.8,.2,1) var(--d,0s) backwards}
+.card{transition:transform .25s ease,box-shadow .25s ease,border-color .2s}
+.thumb img{transition:transform .6s ease}
+/* Chargement élégant : l'image se dévoile quand elle est prête */
+.js-anim .thumb img{opacity:0;transform:scale(1.05);transition:opacity .6s ease,transform .6s ease}
+.js-anim .thumb img.ld{opacity:1;transform:none}
+.card:active{transform:scale(.985)}
+
+/* Boutons : effet de clic (vague) */
+.btn:not(.adminfab),.tab,.gbtn,.atab,.vn-btn{position:relative;overflow:hidden}
+.rpl{position:absolute;border-radius:50%;background:rgba(255,255,255,.4);transform:scale(0);animation:rpl .6s ease-out forwards;pointer-events:none}
+.btn.alt .rpl,.tab .rpl,.atab .rpl,.gbtn .rpl{background:rgba(20,32,70,.15)}
+.tab[aria-pressed=true] .rpl,.atab[aria-pressed=true] .rpl{background:rgba(255,255,255,.3)}
+
+@media(hover:hover){
+  .card:hover{transform:translateY(-4px);box-shadow:0 16px 30px -16px rgba(20,32,70,.5)}
+  .card:hover .thumb img{transform:scale(1.07)}
+  .btn:hover,.gbtn:hover{filter:brightness(1.08)}
+  .btn:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 8px 16px -8px rgba(20,32,70,.55)}
+  .tab:hover{border-color:var(--ink2)}
+  /* petites animations d'icônes */
+  .btn:hover .wa{transform:rotate(-14deg) scale(1.18)}
+  .opt:hover .ico{transform:scale(1.08) rotate(-6deg)}
+  .x:hover{transform:rotate(90deg)}
+  .flink:hover{transform:translateX(3px)}
+  #toTop:hover{transform:translateY(-2px)}
+}
+.wa{transition:transform .3s cubic-bezier(.3,1.6,.5,1)}
+.opt .ico{transition:transform .3s cubic-bezier(.3,1.6,.5,1)}
+.x{transition:transform .25s ease}
+.flink{transition:color .2s,transform .2s}
+.vn-btn[aria-pressed=true]{animation:vnPulse 1.8s ease-out infinite}
+.btn:not(:disabled):active{transform:translateY(1px) scale(.97);box-shadow:none}
+.btn:disabled{transform:none;box-shadow:none}
+
+/* Boutons, onglets, fenêtres, notifications */
+.btn,.tab,.gbtn{transition:transform .15s ease,box-shadow .2s,filter .2s,background .2s,color .2s,border-color .2s}
+dialog[open]{animation:pop .32s cubic-bezier(.2,.8,.2,1)}
+dialog[open]::backdrop{animation:fade .3s ease}
+.toast{animation:toast .35s cubic-bezier(.2,.9,.3,1.2)}
+.rate button{transition:transform .15s,color .15s}
+.rate button:not(:disabled):hover{transform:scale(1.25)}
+.rate button.on{animation:star .4s ease backwards}
+.auth-card{animation:rise .7s cubic-bezier(.2,.8,.2,1) .1s backwards}
+
+/* Respect du réglage « réduire les animations » */
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  ::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important}
+  .js-anim .card:not(.in),.js-anim .rv,.js-anim .thumb img{opacity:1;transform:none}
+  .w>span{transform:none}
+}
