@@ -124,16 +124,27 @@
     </div>
     <label class="f"><span>Jeu</span><select id="pGame"><option>Free Fire</option><option>eFootball</option><option>Blood Strike</option></select></label>
     <div class="row">
-      <label class="f"><span>Niveau</span><input id="pLvl" type="number" inputmode="numeric" min="1" max="100" placeholder="72"></label>
-      <label class="f" id="fEmb"><span>Emblèmes Héroïque</span><input id="pEmb" type="number" inputmode="numeric" min="0" max="99" placeholder="0"></label>
-      <label class="f" id="fRank" hidden><span>Rang ou grade</span><input id="pRank" maxlength="30" placeholder="Ex. Division 1"></label>
+      <label class="f"><span id="lblLvl">Niveau</span><input id="pLvl" type="number" inputmode="numeric" min="1" placeholder="72"></label>
+      <label class="f"><span id="lblEmb">Emblèmes Héroïque</span><input id="pEmb" type="number" inputmode="numeric" min="0" max="999" placeholder="0"></label>
     </div>
     <div class="f-group" id="fPrice">
       <label class="f"><span>Prix (FCFA)</span><input id="pPrice" type="number" inputmode="numeric" min="0" step="500" placeholder="25000"></label>
       <label class="chk"><input id="pNego" type="checkbox"><span>Prix négociable</span></label>
     </div>
     <label class="f" id="fSwap" hidden><span>Échange contre</span><input id="pSwap" maxlength="80" placeholder="Ex. Compte niveau 60+ avec Elite Pass"></label>
-    <label class="f"><span>Liaison du compte</span><select id="pLink"></select></label>
+    <div class="f">
+      <span>Liaison du compte <small class="sm">(une ou plusieurs)</small></span>
+      <div class="lchips" id="pLinkChips" role="group" aria-label="Liaison du compte">
+        <button type="button" class="chip" data-l="Google" aria-pressed="false">Google</button>
+        <button type="button" class="chip" data-l="Gmail" aria-pressed="false">Gmail</button>
+        <button type="button" class="chip" data-l="Facebook" aria-pressed="false">Facebook</button>
+        <button type="button" class="chip" data-l="iCloud" aria-pressed="false">iCloud</button>
+        <button type="button" class="chip" data-l="Konami" aria-pressed="false">Konami</button>
+        <button type="button" class="chip" data-l="Twitter" aria-pressed="false">Twitter</button>
+        <button type="button" class="chip" data-l="Autre" aria-pressed="false">Autre</button>
+      </div>
+      <input id="pLinkOther" maxlength="25" placeholder="Précisez la liaison (ex. VK, Huawei…)" hidden>
+    </div>
     <label class="f"><span>Description (facultatif)</span><textarea id="pDesc" rows="3" maxlength="800" placeholder="Skins, personnages, armes, diamants… ce que vous voulez ajouter."></textarea></label>
     <div class="f">
       <div class="picrow"><span>Captures d’écran<em id="picCount">0/8</em></span><button class="linkbtn" id="picClear" type="button" hidden>Tout retirer</button></div>
@@ -231,4 +242,4 @@
 <script src="animations.js"></script>
 </body>
   </html>
-  
+        
