@@ -49,9 +49,10 @@ function card(a) {
   <button class="card${a.sold ? " is-sold" : ""}" data-id="${a.id}">
     <div class="thumb"${pic ? "" : ` style="${bg(a.game)}"`}>${pic ? `<img src="${pic}" alt="" loading="lazy">` : esc(a.game)}<span class="tag ${a.sold ? "sold" : a.type === "echange" ? "ex" : ""}">${a.sold ? "Vendu" : a.type === "vente" ? "À vendre" : "Échange"}</span></div>
     <div class="cb"><h3>${esc(a.title)}</h3>
-      <div class="meta">${esc(a.game)} · Niveau ${a.lvl}${a.rank ? " · " + esc(a.rank) : ""}</div>
+      <div class="meta">${esc(a.game)} · ${lvLabel(a)} ${a.lvl}${a.rank ? " · " + esc(a.rank) : ""}</div>
+      ${a.link ? `<div class="meta">Liaison : ${esc(a.link)}</div>` : ""}
       <div class="meta"><span class="stars">${starsOf(avg(a))}</span> ${a.rCount ? avg(a).toFixed(1) + " (" + a.rCount + ")" : "Pas encore noté"}</div>
-      <div class="price">${a.type === "vente" ? fmt(a.price) : "Échange"}</div></div>
+      <div class="price">${a.type === "vente" ? fmt(a.price) + (a.nego ? ' <span class="nego">Négociable</span>' : "") : "Échange"}</div></div>
   </button>`;
 }
 
@@ -86,7 +87,7 @@ function render() {
     if (pmax && a.price > pmax) return false;
     if (onlyMine && !(me && a.uid === me.uid)) return false;
     if (words.length) {
-      const h = norm(a.title + " " + a.desc + " " + a.rank + " " + a.game + " " + (a.type === "vente" ? "vente" : "echange"));
+      const h = norm(a.title + " " + a.desc + " " + a.rank + " " + a.game + " " + (a.type === "vente" ? "vente" : "echange") + " " + (a.link || ""));
       return words.every(w => h.includes(w));
     }
     return true;
@@ -126,17 +127,28 @@ function draw(a, pics, my) {
     ? `<div class="cta-bar"><span class="sm">Cette annonce est vendue.</span></div>`
     : `<div class="cta-bar"><div><div class="cta-p">${a.type === "vente" ? fmt(a.price) : "Échange"}</div><div class="sm">Réponse rapide sur WhatsApp</div></div><a class="btn ok" target="_blank" rel="noopener" href="https://wa.me/${ADMIN_PHONE}?text=${wa}"><svg class="wa" aria-hidden="true"><use href="#i-wa"/></svg>${a.type === "vente" ? "Acheter" : "Proposer l’échange"}</a></div>`;
   $("#vBody").innerHTML = `
-    ${shots.length ? `<div class="gal">${shots.map(s => `<img src="${s}" alt="Capture du compte">`).join("")}</div>` : `<div class="thumb" style="border-radius:8px;${bg(a.game)}">${esc(a.game)}</div>`}
+    ${shots.length ? `<div class="galw"><div class="gal" id="gal">${shots.map((s, i) => `<img src="${s}" alt="Photo ${i + 1} sur ${shots.length}" data-i="${i}">`).join("")}</div>${shots.length > 1 ? `<span class="galn" id="galn">1/${shots.length}</span>` : ""}</div>` : `<div class="thumb" style="border-radius:8px;${bg(a.game)}">${esc(a.game)}</div>`}
     <div><span class="tag${a.sold ? " sold" : ""}" style="position:static;display:inline-block">${a.sold ? "Vendu" : a.type === "vente" ? "À vendre" : "Échange"}</span></div>
-    <div class="price" style="padding:0">${a.type === "vente" ? fmt(a.price) : "Contre : " + esc(a.swap || "à discuter")}</div>
-    <div class="meta">${esc(a.game)} · Niveau ${a.lvl}${a.rank ? " · " + esc(a.rank) : ""} · Publié par ${esc(a.name)}</div>
-    <p>${esc(a.desc).replace(/\n/g, "<br>")}</p>
+    <div class="price" style="padding:0">${a.type === "vente" ? fmt(a.price) + (a.nego ? ' <span class="nego">Négociable</span>' : "") : "Contre : " + esc(a.swap || "à discuter")}</div>
+    <div class="meta">${esc(a.game)} · ${lvLabel(a)} ${a.lvl}${a.rank ? " · " + esc(a.rank) : ""} · Publié par ${esc(a.name)}</div>
+    ${a.link ? `<div class="meta">Liaison du compte : <b>${esc(a.link)}</b></div>` : ""}
+    ${a.desc ? `<p>${esc(a.desc).replace(/\n/g, "<br>")}</p>` : ""}
     <div class="stars">${starsOf(avg(a))} <span class="sm">${a.rCount ? avg(a).toFixed(1) + "/5 · " + a.rCount + " avis" : "Pas encore noté"}</span></div>
     <div>${rate}</div>
     <ol class="steps"><li><span><b>Contactez</b> le vendeur sur WhatsApp</span></li><li><span><b>Vérifiez</b> le compte avant de payer</span></li><li><span><b>Payez</b> en sécurité, puis changez les accès</span></li></ol>
     ${mine(a) ? `<button class="btn alt" id="sold">${a.sold ? "Remettre en vente" : "Marquer comme vendu"}</button><button class="btn alt" id="del">Supprimer cette annonce</button>` : ""}
     <button class="btn alt" id="rep">Signaler cette annonce</button>
     ${cta}`;
+
+  const gal = $("#gal");
+  if (gal) {
+    gal.onclick = e => { const im = e.target.closest("img"); if (im) openLight(shots, +im.dataset.i); };
+    const gn = $("#galn");
+    if (gn) gal.onscroll = () => {
+      const w = gal.firstElementChild.getBoundingClientRect().width + 8;
+      gn.textContent = `${Math.min(shots.length, Math.round(gal.scrollLeft / w) + 1)}/${shots.length}`;
+    };
+  }
 
   $("#vBody").querySelectorAll(".rate button").forEach(b => b.onclick = async () => {
     const n = +b.dataset.n;
@@ -177,7 +189,7 @@ function shrink(file) {
           return c.toDataURL("image/jpeg", q);
         };
         const fit = (m, q, max) => { let r = draw(m, q); while (r.length > max && q > .3) { q -= .08; m = Math.round(m * .9); r = draw(m, q); } return r; };
-        res({ full: fit(800, .68, 300000), thumb: fit(420, .6, 45000) });
+        res({ full: fit(720, .66, 200000), thumb: fit(420, .6, 45000) });
       };
       im.onerror = () => res(null); im.src = fr.result;
     };
@@ -185,10 +197,84 @@ function shrink(file) {
   });
 }
 
-$("#pImgs").onchange = async e => {
-  imgs = (await Promise.all([...e.target.files].slice(0, 5).map(shrink))).filter(Boolean);
-  $("#prev").innerHTML = imgs.map(i => `<img src="${i.thumb}" alt="">`).join("");
+/* Formulaire : libellés selon le jeu */
+const FIELDS = {
+  "Free Fire": { lv: "Niveau", lvPh: "72", lvMax: 100, ex: "Emblèmes Héroïque", exPh: "0", unit: n => `${n} emblème${n > 1 ? "s" : ""} Héroïque` },
+  "Blood Strike": { lv: "Niveau", lvPh: "40", lvMax: 100, ex: "Emblèmes", exPh: "0", unit: n => `${n} emblème${n > 1 ? "s" : ""}` },
+  "eFootball": { lv: "Force collective", lvPh: "3200", lvMax: 99999, ex: "Nombre de journées", exPh: "10", unit: n => `${n} journée${n > 1 ? "s" : ""}` }
 };
+const lvLabel = a => (FIELDS[a.game] || FIELDS["Free Fire"]).lv;
+function syncForm() {
+  const f = FIELDS[$("#pGame").value] || FIELDS["Free Fire"];
+  $("#lblLvl").textContent = f.lv; $("#pLvl").placeholder = f.lvPh; $("#pLvl").max = f.lvMax;
+  $("#lblEmb").textContent = f.ex; $("#pEmb").placeholder = f.exPh;
+}
+$("#pGame").addEventListener("input", syncForm);
+syncForm();
+
+/* Liaison du compte : boutons à toucher, « Autre » permet d'écrire */
+const picked = new Set();
+const linkChips = () => [...document.querySelectorAll("#pLinkChips .chip")];
+$("#pLinkChips").onclick = e => {
+  const b = e.target.closest(".chip");
+  if (!b) return;
+  const l = b.dataset.l;
+  if (picked.has(l)) picked.delete(l); else picked.add(l);
+  b.setAttribute("aria-pressed", picked.has(l));
+  $("#pLinkOther").hidden = !picked.has("Autre");
+  if (picked.has("Autre") && b.dataset.l === "Autre") $("#pLinkOther").focus();
+};
+function linkValue() {
+  return linkChips().filter(b => picked.has(b.dataset.l))
+    .map(b => b.dataset.l === "Autre" ? ($("#pLinkOther").value.trim() || "Autre") : b.dataset.l).join(", ").slice(0, 60);
+}
+function resetLinks() {
+  picked.clear(); linkChips().forEach(b => b.setAttribute("aria-pressed", "false"));
+  $("#pLinkOther").value = ""; $("#pLinkOther").hidden = true;
+}
+
+/* Photos : jusqu'à 8, on peut en retirer avant de publier */
+const MAXPICS = 8;
+function drawPrev() {
+  $("#prev").innerHTML = imgs.map((p, i) => `<div class="pv"><img src="${p.thumb}" alt="Photo ${i + 1}"><button type="button" class="pv-x" data-rm="${i}" aria-label="Retirer la photo ${i + 1}">×</button>${i === 0 ? `<span class="pv-c">Couverture</span>` : ""}</div>`).join("");
+  $("#picCount").textContent = `${imgs.length}/${MAXPICS}`;
+  $("#picClear").hidden = !imgs.length;
+  $("#addPics").disabled = imgs.length >= MAXPICS;
+  $("#addPics").textContent = imgs.length ? "+ Ajouter d’autres photos" : "+ Ajouter des photos";
+}
+$("#addPics").onclick = () => $("#pImgs").click();
+$("#pImgs").onchange = async e => {
+  const files = [...e.target.files];
+  e.target.value = "";
+  const room = MAXPICS - imgs.length;
+  if (files.length > room) toast(`${MAXPICS} photos maximum : ${room} ajoutée${room > 1 ? "s" : ""}.`);
+  const btn = $("#addPics"); btn.disabled = true; btn.textContent = "Traitement des photos…";
+  const added = (await Promise.all(files.slice(0, room).map(shrink))).filter(Boolean);
+  imgs = imgs.concat(added);
+  drawPrev();
+};
+$("#prev").onclick = e => { const b = e.target.closest("[data-rm]"); if (b) { imgs.splice(+b.dataset.rm, 1); drawPrev(); } };
+$("#picClear").onclick = () => { imgs = []; drawPrev(); };
+drawPrev();
+
+/* Visionneuse plein écran : on glisse pour défiler les photos */
+function lightIdx() { const sc = $("#lScroll"); return Math.round(sc.scrollLeft / sc.clientWidth); }
+function openLight(list, i) {
+  const sc = $("#lScroll");
+  sc.innerHTML = list.map((s, k) => `<div class="ls"><img src="${s}" alt="Photo ${k + 1} sur ${list.length}"></div>`).join("");
+  $("#lPrev").hidden = $("#lNext").hidden = list.length < 2;
+  $("#dLight").showModal();
+  sc.scrollLeft = i * sc.clientWidth;
+  $("#lCount").textContent = `${i + 1} / ${list.length}`;
+  sc.onscroll = () => { $("#lCount").textContent = `${lightIdx() + 1} / ${list.length}`; };
+}
+$("#lPrev").onclick = () => $("#lScroll").scrollBy({ left: -$("#lScroll").clientWidth, behavior: "smooth" });
+$("#lNext").onclick = () => $("#lScroll").scrollBy({ left: $("#lScroll").clientWidth, behavior: "smooth" });
+document.addEventListener("keydown", e => {
+  if (!$("#dLight").open) return;
+  if (e.key === "ArrowLeft") $("#lPrev").click();
+  if (e.key === "ArrowRight") $("#lNext").click();
+});
 document.querySelectorAll("[name=type]").forEach(r => r.onchange = () => {
   const ex = document.querySelector("[name=type]:checked").value === "echange";
   $("#fPrice").hidden = ex; $("#fSwap").hidden = !ex;
@@ -196,23 +282,29 @@ document.querySelectorAll("[name=type]").forEach(r => r.onchange = () => {
 
 $("#send").onclick = async () => {
   if (!me) { location.href = "login.html"; return; }
-  const type = document.querySelector("[name=type]:checked").value;
-  const title = $("#pTitle").value.trim(), lvl = +$("#pLvl").value, price = +$("#pPrice").value,
+  const type = document.querySelector("[name=type]:checked").value, game = $("#pGame").value;
+  const F = FIELDS[game] || FIELDS["Free Fire"];
+  const lvl = +$("#pLvl").value, price = +$("#pPrice").value, link = linkValue(),
     desc = $("#pDesc").value.trim(), name = $("#pName").value.trim();
-  if (!title || !lvl || !desc || !name) return toast("Remplissez le titre, le niveau, la description et votre pseudo.");
-  if (lvl < 1 || lvl > 100) return toast("Le niveau doit être entre 1 et 100.");
+  const emb = Math.max(0, Math.round(+$("#pEmb").value || 0));
+  const rank = emb ? F.unit(emb) : "";
+  if (!lvl || lvl < 1 || lvl > F.lvMax) return toast(`Indiquez : ${F.lv} (de 1 à ${F.lvMax}).`);
   if (type === "vente" && !price) return toast("Indiquez un prix en FCFA.");
+  if (!link) return toast("Choisissez la liaison du compte.");
   if (!imgs.length) return toast("Ajoutez au moins une capture d’écran.");
+  if (!name) return toast("Entrez votre pseudo.");
+  const title = `${type === "echange" ? "Échange compte" : "Compte"} ${game} ${F.lv.toLowerCase()} ${lvl}`;
   const btn = $("#send"); btn.disabled = true; btn.textContent = "Publication…";
   try {
     await gmDB.add({
-      type, game: $("#pGame").value, title, lvl, rank: $("#pRank").value.trim(),
+      type, game, title, lvl, rank, link, nego: type === "vente" && $("#pNego").checked,
       price: type === "vente" ? price : 0, swap: type === "echange" ? $("#pSwap").value.trim() : "",
       desc, name, thumb: imgs[0].thumb, nPics: imgs.length
     }, imgs.map(i => i.full));
     $("#dPost").close();
-    ["#pTitle", "#pRank", "#pLvl", "#pPrice", "#pSwap", "#pDesc", "#pImgs"].forEach(s => $(s).value = "");
-    imgs = []; $("#prev").innerHTML = "";
+    ["#pLvl", "#pEmb", "#pPrice", "#pSwap", "#pDesc"].forEach(s => $(s).value = "");
+    $("#pNego").checked = false; resetLinks();
+    imgs = []; drawPrev();
     toast("Annonce publiée");
   } catch (e) {
     console.error(e);
@@ -278,4 +370,3 @@ $("#waOpen").onclick = () => $("#dWa").showModal();
 document.querySelectorAll("#dWa .opt").forEach(a => a.addEventListener("click", () => setTimeout(() => $("#dWa").close(), 200)));
 $("#yr").textContent = new Date().getFullYear();
 render();
-                                                      
