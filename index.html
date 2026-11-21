@@ -27,7 +27,7 @@
 <header>
   <div class="bar">
     <div class="logo">Market <b>Game</b></div>
-    <div class="acts"><a class="btn ghost" id="authLink" href="login.html">Connexion</a><button class="btn" id="openPost">Publier<span class="lg"> un compte</span></button></div>
+    <div class="acts"><a class="btn ghost" id="authLink" href="login.html">Connexion</a><button class="btn ghost" id="admBtn" type="button" hidden>Admin</button><button class="btn" id="openPost">Publier<span class="lg"> un compte</span></button></div>
   </div>
   <div class="hero">
     <h1>Achetez, vendez ou échangez des comptes de jeux</h1>
@@ -123,16 +123,24 @@
       <label><input type="radio" name="type" value="echange">À échanger</label>
     </div>
     <label class="f"><span>Jeu</span><select id="pGame"><option>Free Fire</option><option>eFootball</option><option>Blood Strike</option></select></label>
-    <label class="f"><span>Titre</span><input id="pTitle" maxlength="70" placeholder="Ex. Compte niveau 72, 3 skins évolutifs"></label>
     <div class="row">
-      <label class="f"><span>Niveau</span><input id="pLvl" type="number" min="1" max="100" placeholder="72"></label>
-      <label class="f"><span>Rang ou grade</span><input id="pRank" maxlength="30" placeholder="Ex. Héroïque, Conquérant"></label>
+      <label class="f"><span>Niveau</span><input id="pLvl" type="number" inputmode="numeric" min="1" max="100" placeholder="72"></label>
+      <label class="f" id="fEmb"><span>Emblèmes Héroïque</span><input id="pEmb" type="number" inputmode="numeric" min="0" max="99" placeholder="0"></label>
+      <label class="f" id="fRank" hidden><span>Rang ou grade</span><input id="pRank" maxlength="30" placeholder="Ex. Division 1"></label>
     </div>
-    <label class="f" id="fPrice"><span>Prix (FCFA)</span><input id="pPrice" type="number" min="0" step="500" placeholder="25000"></label>
+    <div class="f-group" id="fPrice">
+      <label class="f"><span>Prix (FCFA)</span><input id="pPrice" type="number" inputmode="numeric" min="0" step="500" placeholder="25000"></label>
+      <label class="chk"><input id="pNego" type="checkbox"><span>Prix négociable</span></label>
+    </div>
     <label class="f" id="fSwap" hidden><span>Échange contre</span><input id="pSwap" maxlength="80" placeholder="Ex. Compte niveau 60+ avec Elite Pass"></label>
-    <label class="f"><span>Description</span><textarea id="pDesc" rows="4" maxlength="800" placeholder="Skins, personnages, armes, diamants, liaison (Facebook, Google…)"></textarea></label>
-    <label class="f"><span>Captures d’écran (5 max)</span><input id="pImgs" type="file" accept="image/*" multiple></label>
-    <div class="prev" id="prev"></div>
+    <label class="f"><span>Liaison du compte</span><select id="pLink"></select></label>
+    <label class="f"><span>Description (facultatif)</span><textarea id="pDesc" rows="3" maxlength="800" placeholder="Skins, personnages, armes, diamants… ce que vous voulez ajouter."></textarea></label>
+    <div class="f">
+      <div class="picrow"><span>Captures d’écran<em id="picCount">0/8</em></span><button class="linkbtn" id="picClear" type="button" hidden>Tout retirer</button></div>
+      <input id="pImgs" type="file" accept="image/*" multiple hidden>
+      <button class="btn alt" id="addPics" type="button">+ Ajouter des photos</button>
+      <div class="prev" id="prev"></div>
+    </div>
     <label class="f"><span>Votre pseudo</span><input id="pName" maxlength="30" placeholder="Pseudo affiché"></label>
     <p class="sm">Ne publiez jamais vos identifiants. Seules les captures et la description sont affichées.</p>
     <button class="btn" id="send">Publier l’annonce</button>
@@ -156,6 +164,24 @@
       <span class="ico alt"><svg class="wa" aria-hidden="true"><use href="#i-grp"/></svg></span>
       <span><strong>Rejoindre le groupe WhatsApp</strong><small>Suivez les nouvelles annonces et échangez avec la communauté.</small></span>
     </a>
+  </div>
+</dialog>
+
+<dialog id="dLight" class="light" aria-label="Photos du compte">
+  <button class="lx" data-close aria-label="Fermer">×</button>
+  <div class="lscroll" id="lScroll"></div>
+  <button class="ln lprev" id="lPrev" type="button" aria-label="Photo précédente">‹</button>
+  <button class="ln lnext" id="lNext" type="button" aria-label="Photo suivante">›</button>
+  <span class="lcount" id="lCount"></span>
+</dialog>
+
+<dialog id="dAdm">
+  <div class="dh"><h2>Administration</h2><button class="x" data-close aria-label="Fermer">×</button></div>
+  <div class="db">
+    <p class="sm" id="admInfo"></p>
+    <h3 class="admh">Signalements</h3>
+    <div class="admlist" id="admList">Chargement…</div>
+    <button class="btn alt" id="admRefresh" type="button">Actualiser</button>
   </div>
 </dialog>
 
@@ -192,6 +218,7 @@
     <p class="sm" id="accWho"></p>
     <button class="btn" id="accMine" type="button">Voir mes annonces</button>
     <button class="btn" id="accPost" type="button">Publier un compte</button>
+    <button class="btn" id="accAdm" type="button" hidden>Administration</button>
     <button class="btn alt" id="accOut" type="button">Se déconnecter</button>
   </div>
 </dialog>
@@ -200,6 +227,7 @@
 <script src="script.js"></script>
 <script src="voice.js"></script>
 <script src="ux.js"></script>
+<script src="admin.js"></script>
 <script src="animations.js"></script>
 </body>
   </html>
