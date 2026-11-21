@@ -102,4 +102,7 @@ dialog.light::backdrop{background:#000}
 .adm-row{display:grid;gap:10px;border:1px solid var(--line);border-radius:10px;padding:12px}
 .adm-b{display:flex;gap:8px;flex-wrap:wrap}
 .adm-b .btn{padding:8px 14px;font-size:.9rem}
-  
+
+/* ---- Liaison du compte ---- */
+.lchips{display:flex;flex-wrap:wrap;gap:8px}
+.lchips .chip{padding:9px 16px}
