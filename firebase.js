@@ -5,8 +5,8 @@ import {
   sendPasswordResetEmail, updateProfile, signOut
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {
-  getFirestore, collection, doc, query, orderBy, limit, where, onSnapshot,
-  getDocs, getDoc, setDoc, updateDoc, writeBatch, increment, serverTimestamp
+  getFirestore, collection, doc, query, orderBy, limit, onSnapshot,
+  getDocs, getDoc, setDoc, updateDoc, deleteDoc, where, writeBatch, increment, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -19,8 +19,7 @@ const firebaseConfig = {
   measurementId: "G-SJBPLEBE9M"
 };
 
-// ⚠️ Mets ici TON email d'administrateur (celui de ton compte Google).
-// Il doit être le même que dans les règles Firestore (fichier firestore.rules).
+// Ton email d'administrateur (peut supprimer n'importe quelle annonce). Le même que dans firestore.rules.
 const ADMIN_EMAIL = "yannloba3@gmail.com";
 
 const app = initializeApp(firebaseConfig);
@@ -66,16 +65,11 @@ window.gmDB = {
     const s = await getDocs(query(collection(db, "ads", id, "pics"), orderBy("i")));
     return s.docs.map(d => d.data().d);
   },
-  // annonce + photos en une seule écriture.
-  // Une annonce d'un client est « en attente » jusqu'à l'approbation de l'admin.
+  // annonce + photos en une seule écriture
   async add(ad, pics) {
     const ref = doc(ads);
     const b = writeBatch(db);
-    b.set(ref, {
-      ...ad, uid: uid(), sold: false, rSum: 0, rCount: 0,
-      status: gm.isAdmin ? "approved" : "pending",
-      createdAt: serverTimestamp()
-    });
+    b.set(ref, { ...ad, uid: uid(), sold: false, rSum: 0, rCount: 0, createdAt: serverTimestamp() });
     pics.forEach((d, i) => b.set(doc(db, "ads", ref.id, "pics", String(i)), { i, d }));
     await b.commit();
     return ref.id;
@@ -99,18 +93,14 @@ window.gmDB = {
     b.update(doc(db, "ads", id), { rSum: increment(n), rCount: increment(1) });
     await b.commit();
   },
-  report: (id, reason, detail) => setDoc(doc(db, "reports", id + "_" + uid()), { adId: id, uid: uid(), reason: reason || "", detail: detail || "", at: serverTimestamp() }),
-
-  /* ----- Administration (réservé à l'admin par les règles Firestore) ----- */
+  report: id => setDoc(doc(db, "reports", id + "_" + uid()), { adId: id, uid: uid(), at: serverTimestamp() }),
+  // administrateur : lire et traiter les signalements
   async reports() {
     const s = await getDocs(collection(db, "reports"));
     return s.docs.map(d => ({ id: d.id, ...d.data() }));
   },
-  // efface tous les signalements d'une annonce
   async dismiss(adId) {
     const s = await getDocs(query(collection(db, "reports"), where("adId", "==", adId)));
-    const b = writeBatch(db);
-    s.docs.forEach(d => b.delete(d.ref));
-    await b.commit();
+    await Promise.all(s.docs.map(d => deleteDoc(d.ref)));
   }
 };
