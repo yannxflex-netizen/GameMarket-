@@ -106,3 +106,16 @@ dialog.light::backdrop{background:#000}
 /* ---- Liaison du compte ---- */
 .lchips{display:flex;flex-wrap:wrap;gap:8px}
 .lchips .chip{padding:9px 16px}
+
+/* ---- Validation des annonces et message de succès ---- */
+.tag.wait{background:#b45309}
+.card.is-wait{border:1.5px dashed var(--fire)}
+.wait-box{background:#fff4e8;border:1px solid #f3c79d;border-radius:10px;padding:10px 12px;font-size:.9rem}
+.adm-top{display:flex;gap:10px;align-items:flex-start}
+.adm-top img{width:64px;height:64px;object-fit:cover;border-radius:8px;flex:none}
+@keyframes tick{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+.sent{text-align:center;justify-items:center}
+.sent h3{font-size:1.2rem}
+.sent p{color:var(--mut);max-width:26em}
+.sent .btn{width:100%}
+.sent-ico svg{width:72px;height:72px;fill:var(--ok);animation:tick .5s cubic-bezier(.2,1.2,.3,1)}
