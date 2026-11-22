@@ -4,7 +4,30 @@
   const dlg = $("#dAdm");
   if (!dlg) return;
 
+  const waiting = () => ads.filter(x => x.status !== "approved").sort((p, q) => ts(p) - ts(q));
+
+  function badge() {
+    if (!gmAuth.isAdmin) return;
+    const n = waiting().length;
+    $("#admBtn").textContent = n ? `Admin (${n})` : "Admin";
+    $("#accAdm").textContent = n ? `Administration (${n} à valider)` : "Administration";
+  }
+
+  function renderWait() {
+    const w = waiting();
+    $("#admWaitN").textContent = w.length ? `(${w.length})` : "";
+    $("#admWait").innerHTML = w.length ? w.map(x => `<div class="adm-row" data-id="${esc(x.id)}">
+        <div class="adm-top">${x.thumb ? `<img src="${x.thumb}" alt="">` : ""}<div><strong>${esc(x.title)}</strong>
+          <div class="sm">${esc(x.game)} · ${x.type === "vente" ? fmt(x.price) : "Échange"} · par ${esc(x.name)}</div>
+          <div class="sm">Liaison : ${esc(x.link || "—")} · ${x.nPics || 1} photo${(x.nPics || 1) > 1 ? "s" : ""}</div></div></div>
+        <div class="adm-b"><button class="btn alt" data-act="view" type="button">Voir</button><button class="btn ok" data-act="ok" type="button">Approuver</button><button class="btn" data-act="no" type="button">Refuser</button></div>
+      </div>`).join("") : `<p class="sm">Aucune annonce en attente.</p>`;
+  }
+
+  window.admRender = () => { badge(); if (dlg.open) renderWait(); };
+
   async function load() {
+    renderWait();
     const nSold = ads.filter(a => a.sold).length;
     $("#admInfo").textContent = `${ads.length} annonce${ads.length > 1 ? "s" : ""} en ligne · ${nSold} vendue${nSold > 1 ? "s" : ""}`;
     const box = $("#admList");
@@ -27,11 +50,20 @@
     }
   }
 
-  $("#admList").onclick = async e => {
+  async function onAct(e) {
     const b = e.target.closest("[data-act]");
     if (!b) return;
     const id = b.closest(".adm-row").dataset.id, act = b.dataset.act;
     if (act === "view") { dlg.close(); openAd(id); return; }
+    if (act === "ok") {
+      try { await gmDB.approve(id); toast("Annonce approuvée"); }
+      catch (er) { toast("Action refusée."); }
+    }
+    if (act === "no") {
+      if (!confirm("Refuser et supprimer cette annonce ?")) return;
+      try { await gmDB.remove(id); toast("Annonce refusée et supprimée"); }
+      catch (er) { toast("Suppression refusée."); }
+    }
     if (act === "del") {
       if (!confirm("Supprimer définitivement cette annonce ?")) return;
       try { await gmDB.remove(id); await gmDB.dismiss(id); toast("Annonce supprimée"); }
@@ -41,8 +73,10 @@
       try { await gmDB.dismiss(id); toast("Signalements ignorés"); }
       catch (er) { toast("Action refusée."); }
     }
-    load();
-  };
+    setTimeout(load, 150);
+  }
+  $("#admList").onclick = onAct;
+  $("#admWait").onclick = onAct;
   $("#admRefresh").onclick = load;
 
   function openAdmin() { if (gmAuth.isAdmin) { dlg.showModal(); load(); } }
@@ -53,5 +87,7 @@
     const on = !!gmAuth.isAdmin;
     $("#admBtn").hidden = !on;
     $("#accAdm").hidden = !on;
+    badge();
   });
 })();
+                              
