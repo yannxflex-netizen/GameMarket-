@@ -52,13 +52,24 @@ const ads = collection(db, "ads");
 const uid = () => auth.currentUser.uid;
 
 window.gmDB = {
-  // annonces en temps réel (les 80 plus récentes)
+  // annonces en temps réel : validées pour tout le monde, + les siennes ; l'admin voit tout
   watch(ok, ko) {
-    return onSnapshot(
-      query(ads, orderBy("createdAt", "desc"), limit(80)),
-      s => ok(s.docs.map(d => ({ id: d.id, ...d.data() }))),
-      ko
-    );
+    const store = { a: [], b: [] };
+    const map = s => s.docs.map(d => ({ id: d.id, ...d.data() }));
+    const emit = () => {
+      const m = new Map();
+      [...store.a, ...store.b].forEach(x => m.set(x.id, x));
+      ok([...m.values()]);
+    };
+    const me = auth.currentUser;
+    const subs = [];
+    if (gm.isAdmin) {
+      subs.push(onSnapshot(query(ads, limit(300)), s => { store.a = map(s); emit(); }, ko));
+    } else {
+      subs.push(onSnapshot(query(ads, where("status", "==", "approved"), limit(200)), s => { store.a = map(s); emit(); }, ko));
+      if (me) subs.push(onSnapshot(query(ads, where("uid", "==", me.uid)), s => { store.b = map(s); emit(); }, ko));
+    }
+    return () => subs.forEach(u => u());
   },
   // photos complètes d'une annonce (chargées à l'ouverture)
   async pics(id) {
@@ -69,12 +80,13 @@ window.gmDB = {
   async add(ad, pics) {
     const ref = doc(ads);
     const b = writeBatch(db);
-    b.set(ref, { ...ad, uid: uid(), sold: false, rSum: 0, rCount: 0, createdAt: serverTimestamp() });
+    b.set(ref, { ...ad, uid: uid(), status: "pending", sold: false, rSum: 0, rCount: 0, createdAt: serverTimestamp() });
     pics.forEach((d, i) => b.set(doc(db, "ads", ref.id, "pics", String(i)), { i, d }));
     await b.commit();
     return ref.id;
   },
   update: (id, data) => updateDoc(doc(db, "ads", id), data),
+  approve: id => updateDoc(doc(db, "ads", id), { status: "approved" }),
   async remove(id) {
     const s = await getDocs(collection(db, "ads", id, "pics"));
     const b = writeBatch(db);
