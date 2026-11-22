@@ -29,7 +29,7 @@ function setHero(src) {
 setHero(HERO);
 window.addEventListener("load", () => Object.values(COVERS).forEach(s => { new Image().src = s; }));
 
-let ads = [], tab = "", imgs = [], me = null, loaded = false, failed = "", started = false, cur = null, onlyMine = false;
+let ads = [], tab = "", imgs = [], me = null, loaded = false, failed = "", started = false, cur = null, onlyMine = false, unsub = null;
 
 function toast(m, ms = 2800) {
   const t = document.createElement("div");
@@ -45,9 +45,10 @@ function emptyMsg() {
 
 function card(a) {
   const pic = a.thumb || COVERS[a.game];
+  const wait = a.status !== "approved";
   return `
-  <button class="card${a.sold ? " is-sold" : ""}" data-id="${a.id}">
-    <div class="thumb"${pic ? "" : ` style="${bg(a.game)}"`}>${pic ? `<img src="${pic}" alt="" loading="lazy">` : esc(a.game)}<span class="tag ${a.sold ? "sold" : a.type === "echange" ? "ex" : ""}">${a.sold ? "Vendu" : a.type === "vente" ? "À vendre" : "Échange"}</span></div>
+  <button class="card${a.sold ? " is-sold" : ""}${wait ? " is-wait" : ""}" data-id="${a.id}">
+    <div class="thumb"${pic ? "" : ` style="${bg(a.game)}"`}>${pic ? `<img src="${pic}" alt="" loading="lazy">` : esc(a.game)}<span class="tag ${wait ? "wait" : a.sold ? "sold" : a.type === "echange" ? "ex" : ""}">${wait ? "En attente" : a.sold ? "Vendu" : a.type === "vente" ? "À vendre" : "Échange"}</span></div>
     <div class="cb"><h3>${esc(a.title)}</h3>
       <div class="meta">${esc(a.game)} · ${lvLabel(a)} ${a.lvl}${a.rank ? " · " + esc(a.rank) : ""}</div>
       ${a.link ? `<div class="meta">Liaison : ${esc(a.link)}</div>` : ""}
@@ -117,18 +118,20 @@ async function openAd(id) {
 }
 
 function draw(a, pics, my) {
+  const wait = a.status !== "approved";
   const shots = pics && pics.length ? pics : a.thumb ? [a.thumb] : [];
   const wa = encodeURIComponent(`Bonjour Yanox, je suis intéressé par « ${a.title} » (${a.type === "vente" ? fmt(a.price) : "échange"}), réf. ${a.id.slice(0, 6)}, sur Market Game. Est-il toujours disponible ?`);
-  const rate = !me ? `<p class="sm">Connectez-vous pour noter ce compte.</p>`
+  const rate = wait ? "" : !me ? `<p class="sm">Connectez-vous pour noter ce compte.</p>`
     : my === null ? ""
     : my ? `<p class="sm">Votre note : <span class="stars">${starsOf(my)}</span></p>`
     : `<p class="sm" style="margin-bottom:4px">Noter ce compte :</p><div class="rate" role="group" aria-label="Note">${[1, 2, 3, 4, 5].map(n => `<button data-n="${n}" aria-label="${n} sur 5">★</button>`).join("")}</div>`;
-  const cta = a.sold
+  const cta = wait ? "" : a.sold
     ? `<div class="cta-bar"><span class="sm">Cette annonce est vendue.</span></div>`
     : `<div class="cta-bar"><div><div class="cta-p">${a.type === "vente" ? fmt(a.price) : "Échange"}</div><div class="sm">Réponse rapide sur WhatsApp</div></div><a class="btn ok" target="_blank" rel="noopener" href="https://wa.me/${ADMIN_PHONE}?text=${wa}"><svg class="wa" aria-hidden="true"><use href="#i-wa"/></svg>${a.type === "vente" ? "Acheter" : "Proposer l’échange"}</a></div>`;
   $("#vBody").innerHTML = `
     ${shots.length ? `<div class="galw"><div class="gal" id="gal">${shots.map((s, i) => `<img src="${s}" alt="Photo ${i + 1} sur ${shots.length}" data-i="${i}">`).join("")}</div>${shots.length > 1 ? `<span class="galn" id="galn">1/${shots.length}</span>` : ""}</div>` : `<div class="thumb" style="border-radius:8px;${bg(a.game)}">${esc(a.game)}</div>`}
-    <div><span class="tag${a.sold ? " sold" : ""}" style="position:static;display:inline-block">${a.sold ? "Vendu" : a.type === "vente" ? "À vendre" : "Échange"}</span></div>
+    <div><span class="tag${wait ? " wait" : a.sold ? " sold" : ""}" style="position:static;display:inline-block">${wait ? "En attente" : a.sold ? "Vendu" : a.type === "vente" ? "À vendre" : "Échange"}</span></div>
+    ${wait ? `<div class="wait-box"><b>En attente de validation.</b> ${gmAuth.isAdmin ? "Vérifiez les photos et les informations, puis approuvez." : "Votre annonce sera visible par tous dans un délai de 24 h maximum."}</div>` : ""}
     <div class="price" style="padding:0">${a.type === "vente" ? fmt(a.price) + (a.nego ? ' <span class="nego">Négociable</span>' : "") : "Contre : " + esc(a.swap || "à discuter")}</div>
     <div class="meta">${esc(a.game)} · ${lvLabel(a)} ${a.lvl}${a.rank ? " · " + esc(a.rank) : ""} · Publié par ${esc(a.name)}</div>
     ${a.link ? `<div class="meta">Liaison du compte : <b>${esc(a.link)}</b></div>` : ""}
@@ -136,6 +139,7 @@ function draw(a, pics, my) {
     <div class="stars">${starsOf(avg(a))} <span class="sm">${a.rCount ? avg(a).toFixed(1) + "/5 · " + a.rCount + " avis" : "Pas encore noté"}</span></div>
     <div>${rate}</div>
     <ol class="steps"><li><span><b>Contactez</b> le vendeur sur WhatsApp</span></li><li><span><b>Vérifiez</b> le compte avant de payer</span></li><li><span><b>Payez</b> en sécurité, puis changez les accès</span></li></ol>
+    ${wait && gmAuth.isAdmin ? `<button class="btn ok" id="appr" type="button">Approuver cette annonce</button>` : ""}
     ${mine(a) ? `<button class="btn alt" id="sold">${a.sold ? "Remettre en vente" : "Marquer comme vendu"}</button><button class="btn alt" id="del">Supprimer cette annonce</button>` : ""}
     <button class="btn alt" id="rep">Signaler cette annonce</button>
     ${cta}`;
@@ -168,6 +172,10 @@ function draw(a, pics, my) {
     try { await gmDB.update(a.id, { sold: !a.sold }); toast(a.sold ? "Remise en vente" : "Marquée comme vendue"); if (cur === a.id) draw(ads.find(x => x.id === a.id) || a, pics, my); }
     catch (e) { toast("Action refusée."); }
   };
+  if ($("#appr")) $("#appr").onclick = async () => {
+    try { await gmDB.approve(a.id); toast("Annonce approuvée"); if (cur === a.id) draw(ads.find(x => x.id === a.id) || a, pics, my); }
+    catch (e) { toast("Action refusée."); }
+  };
   if ($("#del")) $("#del").onclick = async () => {
     if (!confirm("Supprimer cette annonce ?")) return;
     try { await gmDB.remove(a.id); $("#dView").close(); toast("Annonce supprimée"); }
@@ -189,7 +197,7 @@ function shrink(file) {
           return c.toDataURL("image/jpeg", q);
         };
         const fit = (m, q, max) => { let r = draw(m, q); while (r.length > max && q > .3) { q -= .08; m = Math.round(m * .9); r = draw(m, q); } return r; };
-        res({ full: fit(720, .66, 200000), thumb: fit(420, .6, 45000) });
+        res({ full: fit(700, .64, 170000), thumb: fit(420, .6, 45000) });
       };
       im.onerror = () => res(null); im.src = fr.result;
     };
@@ -234,7 +242,7 @@ function resetLinks() {
 }
 
 /* Photos : jusqu'à 8, on peut en retirer avant de publier */
-const MAXPICS = 8;
+const MAXPICS = 15;
 function drawPrev() {
   $("#prev").innerHTML = imgs.map((p, i) => `<div class="pv"><img src="${p.thumb}" alt="Photo ${i + 1}"><button type="button" class="pv-x" data-rm="${i}" aria-label="Retirer la photo ${i + 1}">×</button>${i === 0 ? `<span class="pv-c">Couverture</span>` : ""}</div>`).join("");
   $("#picCount").textContent = `${imgs.length}/${MAXPICS}`;
@@ -249,7 +257,8 @@ $("#pImgs").onchange = async e => {
   const room = MAXPICS - imgs.length;
   if (files.length > room) toast(`${MAXPICS} photos maximum : ${room} ajoutée${room > 1 ? "s" : ""}.`);
   const btn = $("#addPics"); btn.disabled = true; btn.textContent = "Traitement des photos…";
-  const added = (await Promise.all(files.slice(0, room).map(shrink))).filter(Boolean);
+  const added = [];
+  for (const f of files.slice(0, room)) { const p = await shrink(f); if (p) added.push(p); }
   imgs = imgs.concat(added);
   drawPrev();
 };
@@ -305,7 +314,8 @@ $("#send").onclick = async () => {
     ["#pLvl", "#pEmb", "#pPrice", "#pSwap", "#pDesc"].forEach(s => $(s).value = "");
     $("#pNego").checked = false; resetLinks();
     imgs = []; drawPrev();
-    toast("Annonce publiée");
+    $("#sentWa").href = `https://wa.me/${ADMIN_PHONE}?text=${encodeURIComponent(`Bonjour Yanox, je viens de publier une annonce sur Market Game : « ${title} ». Pouvez-vous la valider, s'il vous plaît ?`)}`;
+    $("#dSent").showModal();
   } catch (e) {
     console.error(e);
     toast(e.code === "permission-denied" ? "Refusé par les règles Firestore (permission-denied). Vérifiez qu'elles sont publiées." : "Échec : " + (e.code || e.message || "erreur inconnue"), 7000);
@@ -324,10 +334,11 @@ document.addEventListener("gm-auth", e => {
   } else {
     l.textContent = "Connexion"; l.href = "login.html"; l.onclick = null;
   }
-  if (!started) {
-    started = true;
-    gmDB.watch(list => { ads = list; loaded = true; failed = ""; render(); }, err => { loaded = true; failed = err.code || "erreur"; render(); });
-  }
+  if (unsub) unsub();
+  unsub = gmDB.watch(
+    list => { ads = list; loaded = true; failed = ""; render(); if (window.admRender) window.admRender(); },
+    err => { loaded = true; failed = err.code || "erreur"; render(); }
+  );
 });
 
 $("#openPost").onclick = () => {
