@@ -323,22 +323,137 @@ $("#send").onclick = async () => {
   btn.disabled = false; btn.textContent = "Publier l’annonce";
 };
 
+/* ---------- Mon compte : photo de profil, pseudo, déconnexion ---------- */
+const stA = document.createElement("style");
+stA.textContent = `
+.acctbtn{width:44px;height:44px;border-radius:50%;padding:0;border:2px solid rgba(255,255,255,.75);background:var(--fire);color:#fff;font-weight:800;font-size:1.1rem;cursor:pointer;overflow:hidden;display:grid;place-items:center;flex:none}
+.acctbtn img,.av img{width:100%;height:100%;object-fit:cover;display:block}
+.av{width:112px;height:112px;border-radius:50%;background:var(--fire);color:#fff;display:grid;place-items:center;font-size:2.6rem;font-weight:800;overflow:hidden;margin:0 auto;border:3px solid var(--line)}
+.acct-top{display:grid;gap:10px;justify-items:center;text-align:center}
+.acct-btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.acct-btns .btn{padding:8px 14px;font-size:.88rem}
+`;
+document.head.append(stA);
+
+let prof = {};
+const pseudo = () => prof.name || me?.displayName || (me?.email || "").split("@")[0] || "";
+const acctBtn = document.createElement("button");
+acctBtn.className = "acctbtn"; acctBtn.type = "button"; acctBtn.hidden = true; acctBtn.setAttribute("aria-label", "Mon compte");
+document.querySelector(".acts").append(acctBtn);
+const acctFoot = document.createElement("button");
+acctFoot.className = "flink"; acctFoot.type = "button"; acctFoot.hidden = true; acctFoot.textContent = "Mon compte";
+document.querySelector("#toTop").before(acctFoot);
+
+const dAcct = document.createElement("dialog");
+dAcct.innerHTML = `<div class="dh"><h2>Mon compte</h2><button class="x" type="button" data-close aria-label="Fermer">×</button></div>
+  <div class="db">
+    <div class="acct-top">
+      <div class="av" id="acAv"></div>
+      <div class="acct-btns">
+        <button class="btn" type="button" id="acPick">Changer la photo</button>
+        <button class="btn alt" type="button" id="acDel">Retirer</button>
+      </div>
+      <input id="acFile" type="file" accept="image/*" hidden>
+      <p class="sm" id="acMail"></p>
+    </div>
+    <label class="f"><span>Pseudo</span><input id="acName" maxlength="30" placeholder="Le nom affiché sur vos annonces" autocomplete="nickname"></label>
+    <button class="btn" type="button" id="acSave">Enregistrer</button>
+    <button class="btn alt" type="button" id="acOut">Se déconnecter</button>
+  </div>`;
+document.body.append(dAcct);
+
+let draftPhoto = "";
+function paintAv() {
+  const ph = safeImg(draftPhoto), nm = ($("#acName").value.trim() || pseudo() || "?");
+  $("#acAv").innerHTML = ph ? `<img src="${ph}" alt="Photo de profil">` : esc(nm[0].toUpperCase());
+}
+function paintAcct() {
+  const ph = safeImg(prof.photo), nm = pseudo();
+  acctBtn.innerHTML = ph ? `<img src="${ph}" alt="">` : esc((nm[0] || "?").toUpperCase());
+  acctBtn.title = nm;
+}
+function openAcct() {
+  if (!me) { location.href = "login.html"; return; }
+  draftPhoto = prof.photo || "";
+  $("#acName").value = pseudo();
+  $("#acMail").textContent = me.email ? "Connecté avec " + me.email : "";
+  paintAv();
+  dAcct.showModal();
+}
+acctBtn.onclick = openAcct;
+acctFoot.onclick = openAcct;
+$("#acName").addEventListener("input", paintAv);
+$("#acPick").onclick = () => $("#acFile").click();
+$("#acDel").onclick = () => { draftPhoto = ""; paintAv(); };
+
+/* Photo de profil : recadrée en carré 192×192 et compressée */
+function avatarFrom(file) {
+  return new Promise(res => {
+    const fr = new FileReader();
+    fr.onload = () => {
+      const im = new Image();
+      im.onload = () => {
+        const S = 192, c = document.createElement("canvas"); c.width = c.height = S;
+        const k = Math.max(S / im.width, S / im.height), w = im.width * k, h = im.height * k;
+        c.getContext("2d").drawImage(im, (S - w) / 2, (S - h) / 2, w, h);
+        const type = WEBP ? "image/webp" : "image/jpeg";
+        let q = .8, out = c.toDataURL(type, q);
+        while (out.length > 24000 && q > .3) { q -= .1; out = c.toDataURL(type, q); }
+        res(out.length <= 28000 ? out : null);
+      };
+      im.onerror = () => res(null); im.src = fr.result;
+    };
+    fr.onerror = () => res(null); fr.readAsDataURL(file);
+  });
+}
+$("#acFile").onchange = async e => {
+  const f = e.target.files[0]; e.target.value = "";
+  if (!f) return;
+  const out = await avatarFrom(f);
+  if (!out) return toast("Photo illisible. Essayez une autre image.");
+  draftPhoto = out; paintAv();
+};
+$("#acSave").onclick = async () => {
+  const name = $("#acName").value.trim();
+  if (name.length < 2) return toast("Choisissez un pseudo (2 caractères minimum).");
+  const btn = $("#acSave"); btn.disabled = true;
+  try {
+    await gmDB.saveProfile({ name, photo: draftPhoto || "" });
+    prof = { ...prof, name, photo: draftPhoto || "" };
+    paintAcct();
+    $("#pName").value = name;
+    toast("Profil enregistré ✓"); dAcct.close();
+  } catch (err) {
+    console.error(err);
+    toast(err.code === "permission-denied" ? "Refusé : publiez d’abord les nouvelles règles Firestore." : "Enregistrement impossible. Réessayez.", 5000);
+  }
+  btn.disabled = false;
+};
+$("#acOut").onclick = () => gmAuth.logout().then(() => { dAcct.close(); toast("Vous êtes déconnecté"); });
+
 /* ---------- Connexion et démarrage ---------- */
 document.addEventListener("gm-auth", e => {
   me = e.detail;
-  const l = $("#authLink");
-  if (me) {
-    l.textContent = "Déconnexion"; l.href = "#";
-    l.onclick = ev => { ev.preventDefault(); gmAuth.logout().then(() => toast("Vous êtes déconnecté")); };
-    if (!$("#pName").value) $("#pName").value = me.displayName || "";
-  } else {
-    l.textContent = "Connexion"; l.href = "login.html"; l.onclick = null;
+  adminBadge();
+  mineTab.hidden = !me;
+  if (!me && tab === "mine") {
+    tab = "";
+    document.querySelectorAll(".tab").forEach(x => x.setAttribute("aria-pressed", x.dataset.t === ""));
+    render();
   }
-  if (unsub) unsub();
-  unsub = gmDB.watch(
-    list => { ads = list; loaded = true; failed = ""; render(); if (window.admRender) window.admRender(); },
-    err => { loaded = true; failed = err.code || "erreur"; render(); }
-  );
+  /* Connecté : « Connexion » disparaît, la pastille du compte apparaît */
+  $("#authLink").hidden = !!me; acctBtn.hidden = !me; acctFoot.hidden = !me;
+  if (me) {
+    prof = {}; paintAcct();
+    if (!$("#pName").value) $("#pName").value = pseudo();
+    gmDB.getProfile().then(p => { prof = p || {}; paintAcct(); if (!$("#pName").value) $("#pName").value = pseudo(); }).catch(() => {});
+  } else {
+    prof = {}; if (dAcct.open) dAcct.close();
+  }
+  if (!started) {
+    started = true;
+    gmDB.watch(list => { ads = list; loaded = true; failed = ""; render(); adminSync(); notifyOwner(list); openFromLink(); }, err => { loaded = true; failed = err.code || "erreur"; render(); });
+  }
 });
 
 $("#openPost").onclick = () => {
@@ -354,8 +469,8 @@ document.querySelectorAll(".tab").forEach(t => t.onclick = () => {
   document.querySelectorAll(".tab").forEach(x => x.setAttribute("aria-pressed", x === t));
   render();
 });
-["#q", "#game", "#sort", "#lvl", "#pmin", "#pmax"].forEach(s => $(s).addEventListener("input", render));
-$("#game").addEventListener("input", e => { setHero(COVERS[e.target.value] || HERO); syncChips(); });
+["#q", "#game", "#sort", "#lvl"].forEach(s => $(s).addEventListener("input", render));
+$("#game").addEventListener("input", e => setHero(COVERS[e.target.value] || HERO));
 document.querySelectorAll("[data-pick]").forEach(b => b.onclick = () => {
   const g = $("#game");
   g.value = b.dataset.pick;
@@ -363,19 +478,7 @@ document.querySelectorAll("[data-pick]").forEach(b => b.onclick = () => {
   window.scrollTo({ top: 0, behavior: "smooth" });
 });
 $("#toTop").onclick = () => window.scrollTo({ top: 0, behavior: "smooth" });
-/* Filtres */
-document.querySelectorAll("#gameChips .chip").forEach(c => c.onclick = () => {
-  const g = $("#game"); g.value = c.dataset.g; g.dispatchEvent(new Event("input", { bubbles: true }));
-});
-$("#fBtn").onclick = () => $("#dFilt").showModal();
-$("#fReset").onclick = resetFilters;
-document.querySelectorAll("[data-pr]").forEach(b => b.onclick = () => {
-  const [lo, hi] = b.dataset.pr.split("-");
-  $("#pmin").value = lo === "0" ? "" : lo; $("#pmax").value = hi; render();
-});
-$("#count").onclick = e => { if (e.target.id === "clearAll") resetFilters(); };
-
-$("#waWrite").href = `https://wa.me/${ADMIN_PHONE}?text=${encodeURIComponent(WA_HELLO)}`;
+$("#waWrite").href = waUrl(WA_HELLO);
 $("#waGroup").href = WA_GROUP;
 $("#waOpen").onclick = () => $("#dWa").showModal();
 document.querySelectorAll("#dWa .opt").forEach(a => a.addEventListener("click", () => setTimeout(() => $("#dWa").close(), 200)));
