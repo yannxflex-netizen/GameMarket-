@@ -19,7 +19,7 @@ const firebaseConfig = {
   measurementId: "G-SJBPLEBE9M"
 };
 
-// Ton email d'administrateur (peut supprimer n'importe quelle annonce). Le même que dans firestore.rules.
+// Ton email d'administrateur. Le même que dans les règles Firestore.
 const ADMIN_EMAIL = "yannloba3@gmail.com";
 
 const app = initializeApp(firebaseConfig);
@@ -52,35 +52,61 @@ const ads = collection(db, "ads");
 const uid = () => auth.currentUser.uid;
 
 window.gmDB = {
-  // annonces en temps réel : validées pour tout le monde, + les siennes ; l'admin voit tout
+  // Annonces en temps réel :
+  //  - tout le monde reçoit les annonces validées ;
+  //  - un client reçoit en plus les siennes (en attente, refusées…) ;
+  //  - l'admin reçoit tout.
+  // Le flux redémarre tout seul quand quelqu'un se connecte ou se déconnecte.
   watch(ok, ko) {
-    const store = { a: [], b: [] };
+    let subs = [], key = null, store = { a: [], b: [] };
     const map = s => s.docs.map(d => ({ id: d.id, ...d.data() }));
     const emit = () => {
       const m = new Map();
       [...store.a, ...store.b].forEach(x => m.set(x.id, x));
       ok([...m.values()]);
     };
-    const me = auth.currentUser;
-    const subs = [];
-    if (gm.isAdmin) {
-      subs.push(onSnapshot(query(ads, limit(300)), s => { store.a = map(s); emit(); }, ko));
-    } else {
-      subs.push(onSnapshot(query(ads, where("status", "==", "approved"), limit(200)), s => { store.a = map(s); emit(); }, ko));
-      if (me) subs.push(onSnapshot(query(ads, where("uid", "==", me.uid)), s => { store.b = map(s); emit(); }, ko));
-    }
-    return () => subs.forEach(u => u());
+    const stop = () => { subs.forEach(u => u()); subs = []; };
+    const keyNow = () => (auth.currentUser ? auth.currentUser.uid : "") + (gm.isAdmin ? ":admin" : "");
+    const start = restart => {
+      stop();
+      store = { a: [], b: [] };
+      key = keyNow();
+      if (restart) emit();
+      const me = auth.currentUser;
+      if (gm.isAdmin) {
+        subs.push(onSnapshot(query(ads, limit(300)), s => {
+          store.a = map(s); emit();
+          // anciennes annonces sans statut : l'admin les valide automatiquement (une seule fois)
+          const old = s.docs.filter(d => !d.data().status);
+          if (old.length) {
+            const b = writeBatch(db);
+            old.slice(0, 400).forEach(d => b.update(d.ref, { status: "approved" }));
+            b.commit().catch(() => {});
+          }
+        }, ko));
+      } else {
+        subs.push(onSnapshot(query(ads, where("status", "==", "approved"), limit(200)), s => { store.a = map(s); emit(); }, ko));
+        if (me) subs.push(onSnapshot(query(ads, where("uid", "==", me.uid)), s => { store.b = map(s); emit(); }, ko));
+      }
+    };
+    start(false);
+    document.addEventListener("gm-auth", () => { if (keyNow() !== key) start(true); });
+    return stop;
   },
   // photos complètes d'une annonce (chargées à l'ouverture)
   async pics(id) {
     const s = await getDocs(query(collection(db, "ads", id, "pics"), orderBy("i")));
     return s.docs.map(d => d.data().d);
   },
-  // annonce + photos en une seule écriture
+  // annonce + photos en une seule écriture.
+  // Un client : « en attente » jusqu'à l'approbation. L'admin : validée tout de suite.
   async add(ad, pics) {
     const ref = doc(ads);
     const b = writeBatch(db);
-    b.set(ref, { ...ad, uid: uid(), status: "pending", sold: false, rSum: 0, rCount: 0, createdAt: serverTimestamp() });
+    b.set(ref, {
+      ...ad, uid: uid(), status: gm.isAdmin ? "approved" : "pending",
+      sold: false, rSum: 0, rCount: 0, createdAt: serverTimestamp()
+    });
     pics.forEach((d, i) => b.set(doc(db, "ads", ref.id, "pics", String(i)), { i, d }));
     await b.commit();
     return ref.id;
@@ -105,7 +131,10 @@ window.gmDB = {
     b.update(doc(db, "ads", id), { rSum: increment(n), rCount: increment(1) });
     await b.commit();
   },
-  report: id => setDoc(doc(db, "reports", id + "_" + uid()), { adId: id, uid: uid(), at: serverTimestamp() }),
+  // signalement avec sa raison
+  report: (id, reason, detail) => setDoc(doc(db, "reports", id + "_" + uid()), {
+    adId: id, uid: uid(), reason: reason || "", detail: detail || "", at: serverTimestamp()
+  }),
   // administrateur : lire et traiter les signalements
   async reports() {
     const s = await getDocs(collection(db, "reports"));
@@ -114,5 +143,14 @@ window.gmDB = {
   async dismiss(adId) {
     const s = await getDocs(query(collection(db, "reports"), where("adId", "==", adId)));
     await Promise.all(s.docs.map(d => deleteDoc(d.ref)));
+  },
+  // profil du client : pseudo et photo (visibles par lui seul et l'admin)
+  async getProfile() {
+    const s = await getDoc(doc(db, "users", uid()));
+    return s.exists() ? s.data() : null;
+  },
+  async saveProfile({ name, photo }) {
+    await setDoc(doc(db, "users", uid()), { name, photo: photo || "", updatedAt: serverTimestamp() }, { merge: true });
+    if (name) await updateProfile(auth.currentUser, { displayName: name });
   }
 };
